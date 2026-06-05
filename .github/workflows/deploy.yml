@@ -18,33 +18,7 @@ jobs:
         continue-on-error: true   # won't fail if nothing is running yet
 
       - name: Build and start
-        run: |
-          if ([string]::IsNullOrEmpty($env:PORT)) { $env:PORT = '3000' }
-          docker compose build --no-cache
-          docker compose up -d
+        run: docker compose up -d --build
       
-      - name: Wait for container to be ready
-        run: |
-          $maxAttempts = 60
-          $attempt = 0
-          $port = $env:PORT
-          if ([string]::IsNullOrEmpty($port)) { $port = 3000 }
-          Write-Host "Checking http://localhost:$port"
-          while ($attempt -lt $maxAttempts) {
-            try {
-              $response = Invoke-WebRequest -Uri http://localhost:$port -UseBasicParsing -TimeoutSec 2
-              Write-Host "Container is running! Got response: $($response.StatusCode)"
-              exit 0
-            } catch {
-              $attempt++
-              if ($attempt -le 5 -or $attempt % 10 -eq 0) {
-                Write-Host "Attempt $attempt/$maxAttempts - Error: $($_.Exception.Message)"
-              }
-              if ($attempt -lt $maxAttempts) {
-                Start-Sleep -Seconds 1
-              }
-            }
-          }
-          Write-Host "Container failed to start after $maxAttempts attempts"
-          docker compose logs
-          exit 1
+      - name: Check it's running
+        run: Invoke-WebRequest -Uri http://localhost:${{ secrets.PORT }} -UseBasicParsing
