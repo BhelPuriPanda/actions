@@ -20,7 +20,7 @@ jobs:
       - name: Build and start
         run: |
           if ([string]::IsNullOrEmpty($env:PORT)) { $env:PORT = '3000' }
-          docker compose up -d --build
+          docker compose up -d --build --no-cache
       
       - name: Wait for container to be ready
         run: |
