@@ -20,5 +20,24 @@ jobs:
       - name: Build and start
         run: docker compose up -d --build
       
-      - name: Check it's running
-        run: Invoke-WebRequest -Uri http://localhost:3000 -UseBasicParsing
+      - name: Wait for container to be ready
+        run: |
+          $maxAttempts = 30
+          $attempt = 0
+          $port = $env:PORT -or 3000
+          while ($attempt -lt $maxAttempts) {
+            try {
+              Invoke-WebRequest -Uri http://localhost:$port -UseBasicParsing
+              Write-Host "Container is running!"
+              exit 0
+            } catch {
+              $attempt++
+              if ($attempt -lt $maxAttempts) {
+                Write-Host "Attempt $attempt/$maxAttempts failed, retrying..."
+                Start-Sleep -Seconds 2
+              }
+            }
+          }
+          Write-Host "Container failed to start"
+          docker compose logs
+          exit 1
