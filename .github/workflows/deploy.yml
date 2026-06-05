@@ -18,26 +18,32 @@ jobs:
         continue-on-error: true   # won't fail if nothing is running yet
 
       - name: Build and start
-        run: docker compose up -d --build
+        run: |
+          $env:PORT = $env:PORT -or 3000
+          docker compose up -d --build
       
       - name: Wait for container to be ready
         run: |
-          $maxAttempts = 30
+          $maxAttempts = 60
           $attempt = 0
-          $port = $env:PORT -or 3000
+          $port = $env:PORT
+          if ([string]::IsNullOrEmpty($port)) { $port = 3000 }
+          Write-Host "Checking http://localhost:$port"
           while ($attempt -lt $maxAttempts) {
             try {
-              Invoke-WebRequest -Uri http://localhost:$port -UseBasicParsing
-              Write-Host "Container is running!"
+              $response = Invoke-WebRequest -Uri http://localhost:$port -UseBasicParsing -TimeoutSec 2
+              Write-Host "Container is running! Got response: $($response.StatusCode)"
               exit 0
             } catch {
               $attempt++
+              if ($attempt -le 5 -or $attempt % 10 -eq 0) {
+                Write-Host "Attempt $attempt/$maxAttempts - Error: $($_.Exception.Message)"
+              }
               if ($attempt -lt $maxAttempts) {
-                Write-Host "Attempt $attempt/$maxAttempts failed, retrying..."
-                Start-Sleep -Seconds 2
+                Start-Sleep -Seconds 1
               }
             }
           }
-          Write-Host "Container failed to start"
+          Write-Host "Container failed to start after $maxAttempts attempts"
           docker compose logs
           exit 1
