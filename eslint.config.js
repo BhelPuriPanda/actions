@@ -1,4 +1,5 @@
 import js from '@eslint/js';
+import globals from 'globals';
 
 export default [
   {
@@ -10,14 +11,21 @@ export default [
       ecmaVersion: 'latest',
       sourceType: 'module',
       globals: {
-        console: 'readonly',
-        process: 'readonly'
+        ...globals.node
       }
     },
     rules: {
       ...js.configs.recommended.rules,
       'no-console': 'off',
       'no-unused-vars': 'warn'
+    }
+  },
+  {
+    files: ['**/*.test.js'],
+    languageOptions: {
+      globals: {
+        ...globals.jest
+      }
     }
   }
 ];
