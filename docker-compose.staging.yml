@@ -1,11 +1,11 @@
 services:
-  app:
+  app-staging:
     build:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "${PORT}:${PORT}"
+      - "${STAGING_PORT}:${STAGING_PORT}"
     environment:
-      - PORT=${PORT}
-    container_name: app-production
+      - PORT=${STAGING_PORT}
+    container_name: app-staging

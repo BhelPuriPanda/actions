@@ -2,7 +2,7 @@ name: Deploy Express App
 
 "on":
   push:
-    branches: [main]
+    branches: [main, dev]
 
 jobs:
   checks:
@@ -28,8 +28,36 @@ jobs:
       - name: Run tests
         run: npm test
 
-  deploy:
+  deploy-staging:
     needs: checks
+    if: github.ref == 'refs/heads/dev'
+    runs-on: self-hosted
+    env:
+      STAGING_PORT: ${{ secrets.STAGING_PORT }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Stop staging container
+        run: docker compose -f docker-compose.staging.yml down
+        continue-on-error: true
+
+      - name: Build and start staging
+        run: docker compose -f docker-compose.staging.yml up -d --build
+
+      - name: Notify staging success
+        if: success()
+        run: |
+          curl.exe -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" -d "text=🟡 Staging deploy succeeded! Commit: ${{ github.sha }}"
+
+      - name: Notify staging failure
+        if: failure()
+        run: |
+          curl.exe -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" -d "text=🔴 Staging deploy failed! Commit: ${{ github.sha }}"
+
+  deploy-production:
+    needs: checks
+    if: github.ref == 'refs/heads/main'
     runs-on: self-hosted
     env:
       PORT: ${{ secrets.PORT }}
@@ -37,22 +65,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Stop existing container
+      - name: Stop production container
         run: docker compose down
         continue-on-error: true
 
-      - name: Build and start
+      - name: Build and start production
         run: docker compose up -d --build
-      
-      - name: Check it's running
-        run: Invoke-WebRequest -Uri http://localhost:${{ secrets.PORT }} -UseBasicParsing
 
-      - name: Notify success
+      - name: Notify production success
         if: success()
         run: |
-          curl.exe -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" -d "text=✅ Deploy succeeded! Commit: ${{ github.sha }}"
+          curl.exe -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" -d "text=✅ Production deploy succeeded! Commit: ${{ github.sha }}"
 
-      - name: Notify failure
+      - name: Notify production failure
         if: failure()
         run: |
-          curl.exe -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" -d "text=❌ Deploy failed! Commit: ${{ github.sha }}"
+          curl.exe -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" -d "text=❌ Production deploy failed! Commit: ${{ github.sha }}"
