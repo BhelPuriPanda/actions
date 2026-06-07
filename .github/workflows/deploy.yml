@@ -5,7 +5,7 @@ name: Deploy Express App
     branches: [main]
 
 jobs:
-  lint:
+  checks:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -25,8 +25,11 @@ jobs:
       - name: Build check
         run: npm run build
 
+      - name: Run tests
+        run: npm test
+
   deploy:
-    needs: lint
+    needs: checks
     runs-on: self-hosted
     env:
       PORT: ${{ secrets.PORT }}
@@ -36,7 +39,7 @@ jobs:
 
       - name: Stop existing container
         run: docker compose down
-        continue-on-error: true   # won't fail if nothing is running yet
+        continue-on-error: true
 
       - name: Build and start
         run: docker compose up -d --build
