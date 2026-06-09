@@ -8,4 +8,5 @@ services:
       - "${PORT}:${PORT}"
     environment:
       - PORT=${PORT}
+      - DATABASE_URL=${DATABASE_URL}
     container_name: app-production

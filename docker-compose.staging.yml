@@ -8,4 +8,5 @@ services:
       - "${STAGING_PORT}:${STAGING_PORT}"
     environment:
       - PORT=${STAGING_PORT}
+      - DATABASE_URL=${DATABASE_URL}
     container_name: app-staging

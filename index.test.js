@@ -1,5 +1,5 @@
 import request from 'supertest';
-import app from './index.js';
+import app, { pool } from './index.js';
 
 describe('GET /', () => {
     it('should return 200', async () => {
@@ -11,4 +11,8 @@ describe('GET /', () => {
         const res = await request(app).get('/');
         expect(res.text).toBe('Hello from Express!');
     });
+});
+
+afterAll(async () => {
+    await pool.end();
 });
