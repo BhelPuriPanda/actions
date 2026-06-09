@@ -1,7 +1,7 @@
 import express from 'express';
 import pg from 'pg';
-import dotenv from 'dotenv';
 
+import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
@@ -9,7 +9,7 @@ const port = process.env.PORT || 3000;
 
 const databaseUrl = process.env.DATABASE_URL || '';
 const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: databaseUrl,
   ssl: databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1')
     ? false
     : { rejectUnauthorized: false }
